@@ -1,0 +1,246 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MediaTek - Gestion du Personnel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .header {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+            cursor: pointer;
+        }
+
+        tr.selected {
+            background: #e3f2fd;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        button {
+            padding: 8px 15px;
+            margin: 5px 2px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .danger {
+            background: #dc3545;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
+
+        a {
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MediaTek - Gestion du Personnel</h1>
+            <a href="/Account/Logout">Déconnexion</a>
+        </div>
+
+        <div class="panel">
+            <h3>Liste du personnel</h3>
+            <table id="tablePersonnel">
+                <thead><tr><th>Nom</th><th>Prénom</th><th>Service</th></tr></thead>
+                <tbody>
+                    <tr><td colspan="3" class="empty">Chargement...</td></tr>
+                </tbody>
+            </table>
+            <div style="margin-top:15px">
+                <button onclick="nouveau()">Ajouter</button>
+                <button onclick="modifier()">Modifier</button>
+                <button class="danger" onclick="supprimer()">Supprimer</button>
+                <button onclick="gererAbsences()">Gérer les absences</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Fiche personnel</h3>
+            <form id="formPersonnel">
+                <input type="hidden" id="personnelId">
+                <label>Nom</label><input type="text" id="nom" required>
+                <label>Prénom</label><input type="text" id="prenom" required>
+                <label>Téléphone</label><input type="text" id="tel">
+                <label>Email</label><input type="email" id="mail">
+                <label>Service</label>
+                <select id="serviceId">
+                    <option value="1">Administratif</option>
+                    <option value="2">Médiation culturelle</option>
+                    <option value="3">Prêt</option>
+                </select>
+                <div><button type="submit">Enregistrer</button><button type="button" onclick="annuler()">Annuler</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let personnels = [], selected = null;
+
+        async function chargerPersonnels() {
+            let response = await fetch('/Personnel/GetAllPersonnels');
+            if (response.ok) {
+                personnels = await response.json();
+                let tbody = document.querySelector('#tablePersonnel tbody');
+                tbody.innerHTML = '';
+                if (personnels.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty">Aucun personnel</td></tr>';
+                    return;
+                }
+                for (let p of personnels) {
+                    let row = tbody.insertRow();
+                    row.insertCell(0).innerText = p.nom;
+                    row.insertCell(1).innerText = p.prenom;
+                    let serviceNom = p.idservice == 1 ? 'Administratif' : (p.idservice == 2 ? 'Médiation culturelle' : 'Prêt');
+                    row.insertCell(2).innerText = serviceNom;
+                    row.onclick = () => selectionner(p);
+                    if (selected && selected.idpersonnel === p.idpersonnel) row.classList.add('selected');
+                }
+            } else {
+                alert('Erreur chargement : ' + response.status);
+            }
+        }
+
+        function selectionner(p) {
+            selected = p;
+            document.getElementById('personnelId').value = p.idpersonnel;
+            document.getElementById('nom').value = p.nom;
+            document.getElementById('prenom').value = p.prenom;
+            document.getElementById('tel').value = p.tel || '';
+            document.getElementById('mail').value = p.mail || '';
+            document.getElementById('serviceId').value = p.idservice;
+            chargerPersonnels();
+        }
+
+        function nouveau() {
+            selected = null;
+            document.getElementById('personnelId').value = '';
+            document.getElementById('nom').value = '';
+            document.getElementById('prenom').value = '';
+            document.getElementById('tel').value = '';
+            document.getElementById('mail').value = '';
+            document.getElementById('serviceId').value = '1';
+            chargerPersonnels();
+        }
+
+        function annuler() { nouveau(); }
+
+        document.getElementById('formPersonnel').onsubmit = async (e) => {
+            e.preventDefault();
+            let data = {
+                idpersonnel: parseInt(document.getElementById('personnelId').value) || 0,
+                nom: document.getElementById('nom').value,
+                prenom: document.getElementById('prenom').value,
+                tel: document.getElementById('tel').value,
+                mail: document.getElementById('mail').value,
+                idservice: parseInt(document.getElementById('serviceId').value)
+            };
+            let url = data.idpersonnel ? '/Personnel/UpdatePersonnel' : '/Personnel/AddPersonnel';
+            let response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                nouveau();
+            } else {
+                alert('Erreur lors de l\'enregistrement : ' + response.status);
+            }
+        };
+
+        async function modifier() {
+            if (!selected) { alert('Sélectionnez un personnel'); return; }
+        }
+
+        async function supprimer() {
+            if (!selected) { alert('Sélectionnez un personnel'); return; }
+            if (confirm('Supprimer ce personnel ?')) {
+                let response = await fetch(`/Personnel/DeletePersonnel?id=${selected.idpersonnel}`, { method: 'POST' });
+                if (response.ok) {
+                    nouveau();
+                } else {
+                    alert('Erreur lors de la suppression');
+                }
+            }
+        }
+
+        async function gererAbsences() {
+            if (!selected) { alert('Sélectionnez un personnel'); return; }
+            window.location.href = `/Absence/Index?idpersonnel=${selected.idpersonnel}`;
+        }
+
+        chargerPersonnels();
+    </script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+﻿@{
+    Layout = null;
+    int idPersonnel = ViewBag.IdPersonnel;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des absences - MediaTek</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        h2 {
+            color: #007bff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        button {
+            padding: 8px 15px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .danger {
+            background: #dc3545;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            z-index: 1000;
+            width: 350px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .back {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/Personnel/Index" class="back">← Retour à la liste</a>
+        <h2>Gestion des absences</h2>
+        <button onclick="showModal()">Ajouter une absence</button>
+
+        <table id="tableAbsences">
+            <thead>
+                <tr><th>Date début</th><th>Date fin</th><th>Motif</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="4" style="text-align:center">Chargement...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="closeModal()"></div>
+    <div class="modal" id="modal">
+        <h3 id="modalTitle">Ajouter une absence</h3>
+        <input type="hidden" id="ancienneDebut">
+        <label>Date début :</label><br>
+        <input type="date" id="datedebut" required><br><br>
+        <label>Date fin :</label><br>
+        <input type="date" id="datefin" required><br><br>
+        <label>Motif :</label><br>
+        <select id="idmotif">
+            <option value="1">vacances</option>
+            <option value="2">maladie</option>
+            <option value="3">motif familial</option>
+            <option value="4">congé parental</option>
+        </select><br><br>
+        <button onclick="saveAbsence()">Enregistrer</button>
+        <button onclick="closeModal()">Annuler</button>
+    </div>
+
+    <script>
+        let idPersonnel = @idPersonnel;
+        let isEdit = false;
+
+        async function loadAbsences() {
+            let response = await fetch(`/Absence/GetAbsences?idpersonnel=${idPersonnel}`);
+            if (response.ok) {
+                let absences = await response.json();
+                let tbody = document.querySelector('#tableAbsences tbody');
+                tbody.innerHTML = '';
+                if (absences.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Aucune absence</td></tr>';
+                    return;
+                }
+                for (let a of absences) {
+                    let row = tbody.insertRow();
+                    row.insertCell(0).innerText = a.datedebut.split('T')[0];
+                    row.insertCell(1).innerText = a.datefin.split('T')[0];
+                    let motif = a.idmotif == 1 ? 'vacances' : (a.idmotif == 2 ? 'maladie' : (a.idmotif == 3 ? 'motif familial' : 'congé parental'));
+                    row.insertCell(2).innerText = motif;
+                    let actions = row.insertCell(3);
+                    let btnEdit = document.createElement('button');
+                    btnEdit.innerText = 'Modifier';
+                    btnEdit.onclick = () => editAbsence(a);
+                    let btnDelete = document.createElement('button');
+                    btnDelete.innerText = 'Supprimer';
+                    btnDelete.className = 'danger';
+                    btnDelete.onclick = () => deleteAbsence(a);
+                    actions.appendChild(btnEdit);
+                    actions.appendChild(btnDelete);
+                }
+            } else {
+                alert('Erreur chargement : ' + response.status);
+            }
+        }
+
+        function showModal() {
+            isEdit = false;
+            document.getElementById('modalTitle').innerText = 'Ajouter une absence';
+            document.getElementById('datedebut').value = '';
+            document.getElementById('datefin').value = '';
+            document.getElementById('idmotif').value = '1';
+            document.getElementById('ancienneDebut').value = '';
+            document.getElementById('modal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function editAbsence(a) {
+            isEdit = true;
+            document.getElementById('modalTitle').innerText = 'Modifier une absence';
+            document.getElementById('datedebut').value = a.datedebut.split('T')[0];
+            document.getElementById('datefin').value = a.datefin.split('T')[0];
+            document.getElementById('idmotif').value = a.idmotif;
+            document.getElementById('ancienneDebut').value = a.datedebut.split('T')[0];
+            document.getElementById('modal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        async function saveAbsence() {
+            let datedebut = document.getElementById('datedebut').value;
+            let datefin = document.getElementById('datefin').value;
+            let idmotif = document.getElementById('idmotif').value;
+            let ancienneDebut = document.getElementById('ancienneDebut').value;
+
+            if (datefin < datedebut) {
+                alert('La date de fin doit être postérieure à la date de début');
+                return;
+            }
+
+            let url = isEdit ? '/Absence/UpdateAbsence' : '/Absence/AddAbsence';
+            let body = isEdit ?
+                { idpersonnel: idPersonnel, datedebut, datefin, idmotif, ancienneDebut } :
+                { idpersonnel: idPersonnel, datedebut, datefin, idmotif };
+
+            let response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (response.ok) {
+                let result = await response.json();
+                if (result.success) {
+                    alert(isEdit ? 'Absence modifiée' : 'Absence ajoutée');
+                    closeModal();
+                    loadAbsences();
+                } else {
+                    alert(result.message || 'Erreur');
+                }
+            } else {
+                alert('Erreur serveur : ' + response.status);
+            }
+        }
+
+        async function deleteAbsence(a) {
+            if (confirm('Supprimer cette absence ?')) {
+                let response = await fetch(`/Absence/DeleteAbsence?idpersonnel=${idPersonnel}&datedebut=${a.datedebut.split('T')[0]}`, { method: 'POST' });
+                if (response.ok) {
+                    alert('Absence supprimée');
+                    loadAbsences();
+                } else {
+                    alert('Erreur lors de la suppression');
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        loadAbsences();
+    </script>
+</body>
+</html>
