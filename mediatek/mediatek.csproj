@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<DocumentationFile>C:\Users\belka\OneDrive\Documents\CNED\Stage\mediatek\mediatek\bin\Debug\net8.0\mediatek.xml</DocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="NewFolder1\**" />
+	  <Compile Remove="NewFolder\**" />
+	  <Content Remove="NewFolder1\**" />
+	  <Content Remove="NewFolder\**" />
+	  <EmbeddedResource Remove="NewFolder1\**" />
+	  <EmbeddedResource Remove="NewFolder\**" />
+	  <None Remove="NewFolder1\**" />
+	  <None Remove="NewFolder\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.8" />
+		<PackageReference Include="MySql.Data" Version="9.7.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.8" />
+	</ItemGroup>
+
+</Project>
