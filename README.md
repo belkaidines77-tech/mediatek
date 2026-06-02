@@ -1,24 +1,39 @@
-# MediaTek86 – Gestion du personnel
+# MediaTek86 – Gestion du personnel et des absences
 
-## Contexte
-Application web développée pour MediaTek86 permettant la gestion du personnel et des absences (architecture MVC, C# / ASP.NET Core, MySQL).
 
-## Installation
-1. Importer `mediatek_complet.sql` dans phpMyAdmin
-2. Ouvrir `mediatek.sln` dans Visual Studio 2022
-3. Vérifier la chaîne de connexion dans `bddmanager/BddManager.cs`
-4. Lancer
+## 1. Présentation du contexte et but de l’application
 
-## Identifiants
-- Login : `responsable`
-- Mot de passe : `admin123`
+MediaTek86 est une Entreprise de Services Numériques (ESN) spécialisée dans le développement informatique, l’infogérance et l’hébergement web.
 
-## Fonctionnalités
-- UC1 : Se connecter
-- UC2 : Ajouter un personnel
-- UC3 : Supprimer un personnel
-- UC4 : Modifier un personnel
-- UC5 : Afficher les absences
-- UC6 : Ajouter une absence 
-- UC7 : Supprimer une absence
-- UC8 : Modifier une absence 
+L’application développée permet au responsable du personnel de :
+- gérer les employés (ajout, modification, suppression)
+- gérer les absences (ajout, modification, suppression) avec vérification des chevauchements
+
+L’application respecte l’architecture **MVC** (Modèle – Vue – Contrôleur).
+
+## 2. MCD (Modèle Conceptuel de Données)
+
+Tables principales :
+- `personnel` (idpersonnel, nom, prénom, tel, mail, idservice)
+- `absence` (idpersonnel, datedebut, datefin, idmotif)
+- `service` (idservice, nom)
+- `motif` (idmotif, libelle)
+- `responsable` (login = mediatek, pwd = mediatek86)
+
+## 3. Interfaces
+
+### Page de connexion
+Formulaire avec les champs : login=responsable, Mot de passe= admin123
+
+### Page de gestion du personnel
+- Liste des employés
+- Formulaire d’ajout / modification (nom, prénom, téléphone, email, service)
+- Boutons : Ajouter, Modifier, Supprimer, Gérer les absences
+
+### Page de gestion des absences
+- Liste des absences d’un employé
+- Popup d’ajout / modification (dates, motif)
+- Boutons : Ajouter, Modifier, Supprimer
+
+
+## 4. Diagramme de paquetages (architecture MVC)
